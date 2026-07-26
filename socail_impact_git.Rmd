@@ -1,0 +1,465 @@
+---
+title: "effect_social_media"
+author: "sommy"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, results = "hide")
+```
+## Introduction
+ The impact of social  media usage at high_school, undergraduate and graduate levels cannot be over_emphasis. the have been a major break out on the use of mobile and smart_phone among teens between the age of 18- 24. student uses social media for advertising, to engage with the people around the globe and most prevalent for gossip news every day.
+ The need for this understudy examine the effect/impact social media have on our young generation, comparing the length of daily usage on the overall impact on teens between the age of 18- 24 years of age.
+
+
+## over-view
+ The area of study covers major European,south_American and Asia countries.
+ 
+### Analysis carried out :
+Data cleaning and preparation Exploratory Data Analysis (EDA), Descriptive statistics Data visualization, Correlation analysis Hypothesis ,testing ANOVA ,Predictive modeling, Insights and recommendations
+
+
+
+
+```{r}
+data <- read.csv(
+  "Social_media_impact_on_life.csv")
+```
+
+
+
+```{r}
+names(data)
+```
+
+
+
+```{r}
+str(data)
+```
+
+
+```{r}
+summary(data)
+```
+
+
+```{r}
+library(psych)
+describe.by(data)
+```
+
+
+```{r}
+library(dplyr)
+data %>%
+  filter(Country == "UK") %>%
+  select(Age, Academic_Level, Gender) 
+```
+
+
+```{r}
+data %>%
+  filter(Country == "UK" & Age > 20)
+
+```
+
+
+
+```{r}
+data %>%
+  distinct(Country)
+```
+
+
+```{r}
+data %>%
+  group_by(Country) %>%
+  summarise(total_people = n()) %>%
+  filter(total_people> 50)
+```
+
+```{r}
+data %>%
+  group_by(Academic_Level) %>%
+  summarise(total_people = n())
+```
+
+
+```{r}
+mental_health_low <- data %>%
+  filter(Mental_Health_Score <= 6) %>%
+  select(Mental_Health_Score, Academic_Level, Most_Used_Platform)
+
+```
+
+
+```{r}
+
+mental_health_low
+```
+
+
+
+```{r}
+data %>% 
+  group_by(Gender)%>%
+  summarise(avg_age = mean(Age))
+```
+
+
+
+## data cleaning and processing
+```{r}
+sum(is.na(data))
+
+```
+
+
+```{r}
+sum(duplicated(data))
+```
+
+
+## converting to catogories for EDA
+```{r}
+data <- data%>%
+  mutate(Gender = as.factor(Gender))
+```
+
+
+```{r}
+levels(data$Gender)
+```
+
+
+```{r}
+class(data$Gender)
+```
+
+
+```{r}
+data$Academic_Level <- as.factor(data$Academic_Level)
+data$Country <- as.factor(data$Country)
+data$Most_Used_Platform <- as.factor(data$Most_Used_Platform)
+data$Affects_Academic_Performance <- as.factor(data$Affects_Academic_Performance)
+data$Overall_Impact <- as.factor(data$Overall_Impact)
+
+```
+
+
+```{r}
+class(data$Academic_Level)
+
+```
+
+
+## EDA
+### Distribution of Social Media Usage:
+This plot shows how much time students spend daily on social media platforms.
+```{r}
+library(ggplot2)
+mean_usage <- mean(data$Avg_Daily_Usage_Hours, na.rm = TRUE)
+
+ggplot(data,
+       aes(x = Avg_Daily_Usage_Hours)) +
+  geom_histogram(bins = 30,
+                 fill = "steelblue",
+                 color = "black") +
+  geom_vline(xintercept = mean_usage,
+             color = "darkred",
+             linetype = "dashed",
+             linewidth = 0.8) +
+  labs(
+    title = "Distribution of Daily Social Media Usage",
+    subtitle = paste0("Mean usage: ", round(mean_usage, 1), " hours/day"),
+    x = "Daily Usage Hours",
+    y = "Frequency"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40")
+  )
+```
+
+## average use of social media accross each platform
+```{r}
+AVG_HR <- data%>%
+  group_by(Most_Used_Platform)%>%
+  summarise(avg = mean(Avg_Daily_Usage_Hours))
+
+
+AVG_HR 
+```
+
+
+## Gender distribution
+```{r}
+ggplot(data, aes(x = Gender, fill = Gender)) +
+  geom_bar() +
+  geom_text(stat = "count", aes(label = after_stat(count)), vjust = -0.2) +
+  labs(
+    title = "Overall Gender Distribution",
+    x = "Gender",
+    y = "Count"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+```
+
+
+
+
+
+```{r}
+most_used_platform_accross_academic_levels <- data%>%
+                                            group_by(Academic_Level,
+                                                       Most_Used_Platform)%>%
+                                            summarise(Total_Platform = 
+                                            n_distinct(Most_Used_Platform))
+
+most_used_platform_accross_academic_levels 
+```
+
+
+```{r}
+most_used_platform_accross_academic_levels2 <- data%>%
+                                            group_by(Academic_Level)%>%
+                                            summarise(Total_Platform = 
+                                            n_distinct(Most_Used_Platform))
+
+most_used_platform_accross_academic_levels2 
+```
+
+
+ Most used social Network: This chart identifies the most popular platform among students.
+```{r}
+
+plot_data <- data %>%
+  count(Most_Used_Platform, name = "Count")
+
+plot_data
+```
+
+
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+ggplot(plot_data,
+       aes(x = reorder(Most_Used_Platform, -Count),
+           y = Count)) +
+  geom_col(fill = "#2C7FB8") +
+  geom_text(aes(label = Count), vjust = -0.4, size = 2.5) +
+  labs(
+    title = "Most Used Social Media Platform",
+    subtitle = "Number of respondents by platform",
+    x = "Platform",
+    y = "Count",
+    caption = "Source: Survey data"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40"),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid.minor = element_blank(),
+    legend.position = "none"
+  )
+```
+
+
+## Social Media Usage vs Mental Health: The scatterplot helps determine whether increased social media usage is associated with better or worse mental health.
+
+```{r}
+# Compute correlation to report alongside the trend line
+r_val <- cor(data$Avg_Daily_Usage_Hours,
+              data$Mental_Health_Score,
+              use = "complete.obs")
+r_val
+```
+
+## plot
+```{r}
+library(ggplot2)
+
+ggplot(data,
+       aes(x = Avg_Daily_Usage_Hours,
+           y = Mental_Health_Score)) +
+  geom_point(alpha = 0.6, color = "steelblue") +
+  geom_smooth(method = "lm", se = TRUE, color = "black") +
+  labs(
+    title = "Social Media Usage vs Mental Health Score",
+    subtitle = paste0("Pearson r = ", round(r_val, 2)),
+    x = "Daily Usage Hours",
+    y = "Mental Health Score",
+    caption = "Note: shows correlation only, not a causal relationship"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold", size = 16),
+    plot.subtitle = element_text(color = "grey40"),
+    plot.caption = element_text(color = "grey50", size = 9, hjust = 0)
+  )
+```
+
+
+
+##  Social Media Usage vs Mental Health: The scatterplot helps determine whether increased social media usage is associated with better or worse mental health.
+```{r}
+library(ggplot2)
+library(dplyr)
+library(scales)
+```
+
+
+```{r}
+# ---- Stats to annotate the plot with ----
+r_val <- cor(data$Avg_Daily_Usage_Hours,
+             data$Mental_Health_Score,
+             use = "complete.obs")
+r_val
+```
+
+
+```{r}
+n_val <- data %>%
+  filter(!is.na(Avg_Daily_Usage_Hours), !is.na(Mental_Health_Score)) %>%
+  nrow()
+n_val
+```
+
+
+
+# ---- Plot ----
+```{r}
+ggplot(data,
+       aes(x = Avg_Daily_Usage_Hours,
+           y = Mental_Health_Score)) +
+  geom_point(alpha = 0.45, color = "#2C3E50", size = 2) +
+  geom_smooth(method = "lm", se = TRUE,
+              color = "#C0392B", fill = "#C0392B", alpha = 0.15,
+              linewidth = 1) +
+  annotate("label",
+           x = min(data$Avg_Daily_Usage_Hours, na.rm = TRUE),
+           y = max(data$Mental_Health_Score, na.rm = TRUE),
+           hjust = 0, vjust = 1,
+           label = paste0("Pearson r = ", round(r_val, 2), "\nN = ", n_val),
+           size = 3.5, fill = "white", label.size = 0.3,
+           color = "#2C3E50") +
+  scale_x_continuous(breaks = pretty_breaks(8)) +
+  scale_y_continuous(breaks = pretty_breaks(8)) +
+  labs(
+    title = "Social Media Usage vs. Mental Health Score",
+    subtitle = "Relationship between daily usage hours and self-reported mental health",
+    x = "Average Daily Usage (hours)",
+    y = "Mental Health Score",
+    caption = "Note: association only — does not imply causation. Self-reported cross-sectional data."
+  ) +
+  theme_minimal(base_size = 13, base_family = "sans") +
+  theme(
+    plot.title = element_text(face = "bold", size = 17, margin = margin(b = 4)),
+    plot.subtitle = element_text(color = "grey40", size = 11, margin = margin(b = 12)),
+    plot.caption = element_text(color = "grey50", size = 9, hjust = 0, margin = margin(t = 10)),
+    axis.title = element_text(face = "bold", size = 11),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_line(color = "grey92"),
+    plot.background = element_rect(fill = "white", color = NA)
+  )
+```
+
+
+# hypothesis testing
+
+## Does Social Media Affect Sleep?
+
+Null Hypothesis (H0): No difference exists in sleep hours between high and low social media users.
+Alternative Hypothesis (H1): A significant difference exists.
+
+```{r}
+# Create categorical variable
+social_media <- data %>%
+  mutate(usage_group = ifelse(Avg_Daily_Usage_Hours > 5,
+                              "High Usage",
+                              "Low Usage"))
+
+social_media
+social_media$usage_group <- as.factor(social_media$usage_group)
+```
+
+
+## Independent t-test( one numerical dependent, and one independent with two categories?usage grp)
+```{r}
+sleep_test <- t.test(
+  Sleep_Hours_Per_Night ~ usage_group,
+  data = social_media)
+
+sleep_test
+```
+
+ A Welch two-sample t-test was conducted to examine differences in sleep duration between students with high and low social media usage. The analysis revealed a statistically significant difference in sleep hours, t(1637.6) = -46.44, p < 0.001. Students with high social media usage slept significantly fewer hours (M = 5.70) compared to low-usage students (M = 7.51). The mean difference ranged from -1.88 to -1.73 hours at the 95% confidence interval.
+
+
+# ANOVA Analysis
+
+## ANOVA tests whether mental health scores differ significantly across social media platforms. one dependt and one independent with 3 or more categories?  most_used_platform
+
+Null hypothesis: there is no significant diff across mean
+Alternative hypothesis: there are diff across at least platform 
+```{r}
+anova_model <- aov(
+  Mental_Health_Score ~ Most_Used_Platform,
+  data = social_media)
+
+summary(anova_model)
+```
+ A one-way ANOVA was conducted to determine whether significant differences existed across social media platforms regarding the mental health score . The analysis revealed a statistically significant effect of platform usage, F(11, 1693) = 8.02, p < 0.001. This indicates that at least one social media platform differs significantly from the others in its impact on the mental health score.
+
+
+
+# WHICH grp diff using POST HOCK TEST
+```{r}
+TukeyHSD(anova_model)
+```
+insight: p< 0.05 show a high significant difference between social networks
+
+
+
+# Gender and Academic Performance Impact
+
+## CHI -Test: This test checks whether academic performance impact depends on gender. test for association or dependency usually between  2 categorical variables
+
+Hypotheses
+Null Hypothesis (H₀) :There is no association between gender and academic performance impact.
+
+Alternative Hypothesis (H₁): There is an association between gender and academic performance impact.
+```{r}
+# Contingency table
+chi_table <- table(
+  social_media$Gender,
+  social_media$Affects_Academic_Performance
+)
+
+chi_table
+
+# Chi-square test
+chisq.test(chi_table)
+```
+No assocaition between gender and academic performance.A Pearson Chi-square test was conducted to determine whether gender is associated with the perceived academic impact of social media usage. The analysis revealed no statistically significant association between gender and academic performance impact, χ²(1) = 0.00014, p = 0.9905. This suggests that male and female students experience similar academic effects from social media usage.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
