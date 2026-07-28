@@ -1,7 +1,7 @@
 ## Impact of Social Media Usage on Student Life (Ages 18–24)
 
 ## over-view
- This file walks through what the EDA and hypothesis tests actually found, and what those findings do — and don't — support.
+ This file walks through what the EDA and hypothesis tests actually found, and what those findings do  and don't  support.
 
 ## 🛠️ Tools and Technologies
 
